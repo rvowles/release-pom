@@ -2,13 +2,14 @@ package com.bluetrainsoftware.maven;
 
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataRetrievalException;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.metadata.ResolutionGroup;
 import org.apache.maven.artifact.repository.ArtifactRepository;
+import org.apache.maven.artifact.resolver.ArtifactCollector;
+import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
+import org.apache.maven.artifact.resolver.ArtifactResolutionException;
+import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.versioning.VersionRange;
 import org.apache.maven.model.Dependency;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.dependency.AbstractResolveMojo;
@@ -16,19 +17,18 @@ import org.apache.maven.plugin.dependency.utils.DependencyStatusSets;
 import org.apache.maven.plugin.dependency.utils.DependencyUtil;
 import org.apache.maven.plugin.dependency.utils.filters.ResolveFileFilter;
 import org.apache.maven.plugin.dependency.utils.markers.SourcesFileMarkerHandler;
-import org.apache.maven.plugins.annotations.Component;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 import org.apache.maven.shared.artifact.filter.collection.*;
+import org.apache.maven.shared.dependency.tree.DependencyNode;
+import org.apache.maven.shared.dependency.tree.DependencyTreeBuilder;
+import org.apache.maven.shared.dependency.tree.DependencyTreeBuilderException;
+import org.apache.maven.shared.dependency.tree.traversal.DependencyNodeVisitor;
 import org.codehaus.plexus.util.StringUtils;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Creates a creates a maven 2 POM for an existing Grails project.
@@ -36,7 +36,7 @@ import java.util.Set;
  * @author Richard Vowles
  * @since 1.1
  */
-@Mojo(name="release-pom", requiresProject = false, requiresDependencyResolution = ResolutionScope.TEST)
+@Mojo(name="release-pom", requiresProject = false, requiresDependencyResolution = ResolutionScope.TEST, defaultPhase = LifecyclePhase.PROCESS_RESOURCES)
 public class ReleasePomMojo extends AbstractResolveMojo {
   @Parameter(required = true, readonly = true, property = "project")
   protected MavenProject project;
@@ -50,8 +50,26 @@ public class ReleasePomMojo extends AbstractResolveMojo {
   @Parameter(property = "localRepository")
   private ArtifactRepository localRepository;
 
-  @Parameter(property = "outputFile")
-  private File outputFile;
+  @Parameter(property = "run.outputFile")
+  private String outputFile = "released-pom.xml";
+
+  @Parameter(property = "run.useMaven2")
+  private boolean useMaven2 = true;
+
+  @Component
+  private DependencyTreeBuilder dependencyTreeBuilder;
+
+  @Component
+  private ArtifactCollector artifactCollector;
+
+  @Parameter(property = "project.remoteArtifactRepositories")
+  private List<ArtifactRepository> remoteRepositories;
+
+  @Component
+  private ArtifactResolver artifactResolver;
+
+  @Component
+  private MavenProjectHelper projectHelper;
 
   protected DependencyStatusSets getDependencySets( boolean stopOnFailure )
     throws MojoExecutionException
@@ -103,30 +121,72 @@ public class ReleasePomMojo extends AbstractResolveMojo {
     return status;
   }
 
-  private void formatParent(StringBuffer sb) {
-    MavenProject parent = project.getParent();
+  private Set<Artifact> resolveTreeFromMaven2() {
+    final Set<Artifact> resolvedArtifacts = new HashSet<Artifact>();
 
-    if (parent != null) {
+    try {
+      // we have to do this because Aether does not work.
+      dependencyTreeBuilder.buildDependencyTree(project, localRepository, artifactFactory,
+        artifactMetadataSource, artifactCollector).getRootNode().accept(new DependencyNodeVisitor() {
+        @Override
+        public boolean visit(DependencyNode dependencyNode) {
+          Artifact artifact = dependencyNode.getArtifact();
 
-      sb.append("\t<parent>\n\t\t");
+          if (dependencyNode.getState() != DependencyNode.INCLUDED)
+            return true;
+
+          if (artifact.getArtifactId().equals(project.getArtifactId()) && artifact.getGroupId().equals(project.getGroupId()))
+            return true;
+
+          try {
+            artifactResolver.resolve(artifact, remoteRepositories, localRepository);
+          } catch (ArtifactResolutionException e) {
+            throw new RuntimeException(e);
+          } catch (ArtifactNotFoundException e) {
+            throw new RuntimeException(e);
+          }
+
+          resolvedArtifacts.add(artifact);
+          return true;
+        }
+
+        @Override
+        public boolean endVisit(DependencyNode dependencyNode) {
+          return true;
+        }
+      });
+    } catch (DependencyTreeBuilderException e) {
+      throw new RuntimeException(e);
     }
 
+    return resolvedArtifacts;
   }
 
   @Override
   public void execute() throws MojoExecutionException, MojoFailureException {
 
-    DependencyStatusSets results = this.getDependencySets( false );
+    getLog().info("Generating output file for resolved dependencies into " + outputFile);
 
-    if (results.getUnResolvedDependencies() != null && results.getUnResolvedDependencies().size() > 0) {
-      System.out.println("Unable reliably determine dependencies\n" + results.getOutput(true, true));
-      throw new MojoFailureException("Unable to reliably determine dependencies");
+    Set<Artifact> resolvedArtifacts;
+
+    if (useMaven2) {
+      resolvedArtifacts = resolveTreeFromMaven2();
+    } else {
+      DependencyStatusSets results = this.getDependencySets( false );
+
+      if (results.getUnResolvedDependencies() != null && results.getUnResolvedDependencies().size() > 0) {
+        System.out.println("Unable reliably determine dependencies\n" + results.getOutput(true, true));
+        throw new MojoFailureException("Unable to reliably determine dependencies");
+      }
+
+      resolvedArtifacts = results.getResolvedDependencies();
     }
 
-    ReleaseTemplate releaseTemplate = new ReleaseTemplate(project, results.getResolvedDependencies(), artifactMetadataSource, localRepository);
+    ReleaseTemplate releaseTemplate = new ReleaseTemplate(project, resolvedArtifacts, artifactMetadataSource, localRepository, outputFile);
 
-    System.out.println(releaseTemplate.generateReleasePom());
+    releaseTemplate.generateReleasePom();
 
+    projectHelper.attachArtifact(project, "pom", "release-pom", new File(outputFile));
   }
 
   private Artifact dependencyToArtifact(final Dependency dep) {

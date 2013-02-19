@@ -14,10 +14,13 @@ class ReleaseTemplate {
   Set<Artifact> artifacts
   ArtifactMetadataSource artifactMetadataSource
   ArtifactRepository localRepository
+  String outputFile
 
   public ReleaseTemplate(MavenProject project, Set<Artifact> artifacts,
                          ArtifactMetadataSource artifactMetadataSource,
-                         ArtifactRepository localRepository) {
+                         ArtifactRepository localRepository,
+                          String outputFile) {
+    this.outputFile = outputFile
     this.project = project
     this.artifacts = artifacts
     this.artifactMetadataSource = artifactMetadataSource
@@ -46,8 +49,16 @@ class ReleaseTemplate {
   }
 
 
-  public String generateReleasePom() throws MojoFailureException {
-    StringWriter writer = new StringWriter()
+  public void generateReleasePom() throws MojoFailureException {
+    FileWriter writer = new FileWriter(outputFile)
+
+    fillWriter(writer)
+
+    writer.close()
+  }
+
+  private void fillWriter(Writer writer) {
+
     def xml = new MarkupBuilder(writer)
     xml.project() {
       if (project.parent) {
@@ -75,28 +86,36 @@ class ReleaseTemplate {
       if (artifacts) {
         dependencies() {
           artifacts.each { Artifact artifact ->
-//            dependency() {
-//              groupId(artifact.groupId)
-//              artifactId(artifact.artifactId)
-//              version("[" + artifact.getVersion() + "]")
-//              def excludedArtifacts = getExcludes(artifact)
-//              if (excludes) {
-//                excludes() {
-//                  excludedArtifacts.each { Artifact ex ->
-//                    exclude() {
-//                      groupId(ex.groupId)
-//                      artifactId(ex.artifactId)
-//                    }
-//                  }
-//                }
-//              }
-//            }
+            dependency() {
+              groupId(artifact.groupId)
+              artifactId(artifact.artifactId)
+              version(artifact.getVersion())
+              def excludedArtifacts = getExcludes(artifact)
+              if (excludedArtifacts) {
+                exclusions() {
+                  exclusion() {
+                    groupId('*')
+                    artifactId('*')
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (project.buildPlugins) {
+        build() {
+          plugins() {
+            project.buildPlugins.each {
+            }
           }
         }
       }
     }
 
+
+
     xml.omitEmptyAttributes = true
-    return writer.toString()
   }
 }
