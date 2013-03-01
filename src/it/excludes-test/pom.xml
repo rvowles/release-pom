@@ -31,6 +31,26 @@
         <groupId>com.bluetrainsoftware.maven</groupId>
         <artifactId>release-pom</artifactId>
         <version>@project.version@</version>
+          <executions>
+          <execution>
+              <id>generate-dep-list</id>
+              <!--
+                Although these could be considered generated resources
+                they are not used within the project they only make sense in the
+                final package, hence package phase.
+              -->
+              <!--
+                And you don't want to regenerate these files for every goal called
+              -->
+              <phase>prepare-package</phase>
+              <goals>
+                  <goal>release-pom</goal>
+              </goals>
+              <configuration>
+                  <outputFile>${project.build.outputDirectory}/released-pom.xml</outputFile>
+              </configuration>
+          </execution>
+        </executions>
         <configuration>
             <outputFile>my.file.pom</outputFile>
         </configuration>

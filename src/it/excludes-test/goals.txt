@@ -1,1 +1,2 @@
-release-pom:release-pom
+package
+

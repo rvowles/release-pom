@@ -90,14 +90,14 @@ class ReleaseTemplate {
               groupId(artifact.groupId)
               artifactId(artifact.artifactId)
               version(artifact.getVersion())
-              def excludedArtifacts = getExcludes(artifact)
-              if (excludedArtifacts) {
+//              def excludedArtifacts = getExcludes(artifact)
+//              if (excludedArtifacts) {
                 exclusions() {
                   exclusion() {
                     groupId('*')
                     artifactId('*')
                   }
-                }
+//                }
               }
             }
           }

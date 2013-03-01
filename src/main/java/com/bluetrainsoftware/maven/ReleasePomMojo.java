@@ -53,6 +53,9 @@ public class ReleasePomMojo extends AbstractResolveMojo {
   @Parameter(property = "run.outputFile")
   private String outputFile = "released-pom.xml";
 
+  @Parameter(property = "run.outputFilePom")
+  private String outputFilePom = "released-pom.xml";
+
   @Parameter(property = "run.useMaven2")
   private boolean useMaven2 = true;
 
@@ -182,11 +185,20 @@ public class ReleasePomMojo extends AbstractResolveMojo {
       resolvedArtifacts = results.getResolvedDependencies();
     }
 
-    ReleaseTemplate releaseTemplate = new ReleaseTemplate(project, resolvedArtifacts, artifactMetadataSource, localRepository, outputFile);
+    String finalOutputFile = "pom".equals(project.getPackaging()) ? outputFilePom : outputFile;
+
+    File fileOutputFile = new File(finalOutputFile);
+    File parentDir = fileOutputFile.getParentFile();
+
+    if (parentDir != null && !parentDir.exists()) {
+      parentDir.mkdirs();
+    }
+
+    ReleaseTemplate releaseTemplate = new ReleaseTemplate(project, resolvedArtifacts, artifactMetadataSource, localRepository, finalOutputFile);
 
     releaseTemplate.generateReleasePom();
 
-    projectHelper.attachArtifact(project, "pom", "release-pom", new File(outputFile));
+    projectHelper.attachArtifact(project, "pom", "release-pom", new File(finalOutputFile));
   }
 
   private Artifact dependencyToArtifact(final Dependency dep) {
