@@ -1,0 +1,65 @@
+release-pom Maven Plugin
+========================
+
+The purpose of this plugin is to ensure that on release, a fully resolved POM (including all transitive versions and
+their resolved versions) is written to disk and pushed along with the released artifact.
+
+This enables you to do patch releases, where all artifacts need to remain the same, but one will probably change.
+
+Usage
+-----
+
+Put this in your pom:
+
+     <plugin>
+        <groupId>com.bluetrainsoftware.maven</groupId>
+        <artifactId>release-pom</artifactId>
+        <version>1.2</version>
+        <executions>
+            <execution>
+                <id>generate-dep-list</id>
+                <phase>prepare-package</phase>
+                <goals>
+                    <goal>release-pom</goal>
+                </goals>
+                <configuration>
+                    <outputFile>${project.build.outputDirectory}/META-INF/maven/released-pom.xml</outputFile>
+                </configuration>
+            </execution>
+        </executions>
+      </plugin>
+
+If you only want this to occur when a release is actually occuring, you can put it inside a profile like this:
+
+
+     <profile>
+      <!-- adtivate the sonatype profile when a release is being done -->
+      <id>build-release-pom</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+             ...
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+You can specify two parameters on the configuration:
+
+    * useMaven2 - if you find that the dependency tree is incorrect, Maven 3's dependency tree as passed to the Dependency plugin is infrequently wrong. Set this to true and make sure you
+       are using a version of the dependency plugin that supports Maven 2.
+    * outputFile - specifies where you want the file to go. I recommend the output directory that gets jar'd up so it gets included along with everything else.
+
+
+Caveats
+-------
+
+The plugin generates only a full dependency tree, it does not attempt to release the pom with plugins and properties. As these don't change on release and have no version ranges capability, for me they are
+not yet important.
+
