@@ -10,7 +10,7 @@
 
   <groupId>com.bluetrainsoftware.maven</groupId>
   <artifactId>release-pom</artifactId>
-  <version>1.2</version>
+  <version>1.3-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
   <name>Maven Release POM Plugin</name>
