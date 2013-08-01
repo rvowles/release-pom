@@ -78,11 +78,12 @@ class ReleaseTemplate {
       description(project.description)
 	    packaging('pom')
 
-      properties() {
-        project.properties.each { key, value ->
-          "${key}"(value)
-        }
-      }
+	    // secure information appears here
+//      properties() {
+//        project.properties.each { key, value ->
+//          "${key}"(value)
+//        }
+//      }
 
       if (artifacts) {
         dependencies() {
