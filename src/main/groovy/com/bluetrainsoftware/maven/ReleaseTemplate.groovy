@@ -27,7 +27,7 @@ class ReleaseTemplate {
     this.localRepository = localRepository
   }
 
-  List<String> ignoreScopes = ["test", "provided", "optional"]
+  List<String> ignoreScopes = []
 
   List<Artifact> getExcludes(Artifact artifact) throws MojoFailureException {
     List<Artifact> excludes = []
@@ -76,6 +76,7 @@ class ReleaseTemplate {
       version(project.version)
       name(project.name)
       description(project.description)
+	    packaging('pom')
 
       properties() {
         project.properties.each { key, value ->
@@ -90,6 +91,15 @@ class ReleaseTemplate {
               groupId(artifact.groupId)
               artifactId(artifact.artifactId)
               version(artifact.getVersion())
+	            if (artifact.getType()) {
+		            type(artifact.getType())
+	            }
+	            if (artifact.getScope()) {
+		            scope(artifact.getScope())
+	            }
+	            if (artifact.getClassifier()) {
+		            classifier(artifact.getClassifier())
+	            }
 //              def excludedArtifacts = getExcludes(artifact)
 //              if (excludedArtifacts) {
                 exclusions() {
