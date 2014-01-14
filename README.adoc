@@ -1,16 +1,17 @@
-release-pom Maven Plugin
-========================
+= release-pom Maven Plugin
 
+== Introduction
 The purpose of this plugin is to ensure that on release, a fully resolved POM (including all transitive versions and
 their resolved versions) is written to disk and pushed along with the released artifact.
 
 This enables you to do patch releases, where all artifacts need to remain the same, but one will probably change.
 
-Usage
------
+== Usage
 
 Put this in your pom:
 
+[source,xml]
+----
      <plugin>
         <groupId>com.bluetrainsoftware.maven</groupId>
         <artifactId>release-pom</artifactId>
@@ -28,10 +29,13 @@ Put this in your pom:
             </execution>
         </executions>
       </plugin>
+----
 
 If you only want this to occur when a release is actually occuring, you can put it inside a profile like this:
 
 
+[source,xml]
+----
      <profile>
       <!-- adtivate the sonatype profile when a release is being done -->
       <id>build-release-pom</id>
@@ -49,6 +53,7 @@ If you only want this to occur when a release is actually occuring, you can put 
         </plugins>
       </build>
     </profile>
+----
 
 You can specify two parameters on the configuration:
 
@@ -57,8 +62,7 @@ You can specify two parameters on the configuration:
     * outputFile - specifies where you want the file to go. I recommend the output directory that gets jar'd up so it gets included along with everything else.
 
 
-Caveats
--------
+== Caveats
 
 The plugin generates only a full dependency tree, it does not attempt to release the pom with plugins and properties. As these don't change on release and have no version ranges capability, for me they are
 not yet important.
