@@ -75,17 +75,68 @@
 
   <build>
     <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
-        <configuration>
-          <!-- set verbose to be true if you want lots of uninteresting messages -->
-          <!-- <verbose>true</verbose> -->
-          <source>1.6</source>
-          <target>1.6</target>
-        </configuration>
-      </plugin>
-
+	    <plugin>
+		    <groupId>org.codehaus.plexus</groupId>
+		    <artifactId>plexus-component-metadata</artifactId>
+		    <version>1.6</version>
+		    <executions>
+			    <execution>
+				    <goals>
+					    <goal>generate-metadata</goal>
+				    </goals>
+			    </execution>
+		    </executions>
+	    </plugin>
+	    <plugin>
+		    <groupId>org.apache.maven.plugins</groupId>
+		    <artifactId>maven-plugin-plugin</artifactId>
+		    <version>3.4</version>
+		    <configuration>
+			    <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
+		    </configuration>
+		    <executions>
+			    <!-- if you want to generate help goal -->
+			    <execution>
+				    <id>generated-helpmojo</id>
+				    <goals>
+					    <goal>helpmojo</goal>
+				    </goals>
+			    </execution>
+		    </executions>
+	    </plugin>
+	    <plugin>
+		    <artifactId>maven-compiler-plugin</artifactId>
+		    <version>3.6.1</version>
+		    <configuration>
+			    <!--<compilerVersion>1.8</compilerVersion>-->
+			    <source>1.8</source>
+			    <target>1.8</target>
+			    <useIncrementalCompilation>false</useIncrementalCompilation>
+		    </configuration>
+	    </plugin>
+	    <plugin>
+		    <groupId>org.apache.maven.plugins</groupId>
+		    <artifactId>maven-javadoc-plugin</artifactId>
+		    <version>2.10.4</version>
+		    <dependencies>
+			    <dependency>
+				    <groupId>org.codehaus.plexus</groupId>
+				    <artifactId>plexus-archiver</artifactId>
+				    <version>3.4</version>
+			    </dependency>
+		    </dependencies>
+		    <executions>
+			    <execution>
+				    <id>attach-javadocs</id>
+				    <goals>
+					    <goal>jar</goal>
+				    </goals>
+			    </execution>
+		    </executions>
+		    <configuration>
+			    <failOnError>false</failOnError>
+		    </configuration>
+	    </plugin>
     </plugins>
   </build>
 </project>

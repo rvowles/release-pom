@@ -31,7 +31,7 @@ import java.io.File
 import java.util.*
 
 /**
- * Creates a creates a maven 2 POM for an existing Grails project.
+ * Creates a creates a maven 2 POM for an existing project.
  *
  * @author Richard Vowles
  * @since 1.1
