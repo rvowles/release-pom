@@ -15,7 +15,7 @@ Put this in your pom:
      <plugin>
         <groupId>com.bluetrainsoftware.maven</groupId>
         <artifactId>release-pom</artifactId>
-        <version>1.5</version>
+        <version>1.6</version>
         <executions>
             <execution>
                 <id>generate-dep-list</id>
@@ -31,7 +31,7 @@ Put this in your pom:
       </plugin>
 ----
 
-If you only want this to occur when a release is actually occuring, you can put it inside a profile like this:
+If you only want this to occur when a release is actually occurring, you can put it inside a profile like this:
 
 
 [source,xml]

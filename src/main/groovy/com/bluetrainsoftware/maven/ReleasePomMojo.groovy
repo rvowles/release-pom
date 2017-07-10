@@ -179,7 +179,7 @@ public class ReleasePomMojo extends AbstractResolveMojo {
       DependencyStatusSets results = this.getDependencySets( false )
 
       if (results.getUnResolvedDependencies() != null && results.getUnResolvedDependencies().size() > 0) {
-        System.out.println("Unable reliably determine dependencies\n" + results.getOutput(true, true))
+        getLog().error("Unable reliably determine dependencies\n" + results.getOutput(true, true))
         throw new MojoFailureException("Unable to reliably determine dependencies")
       }
 
@@ -199,7 +199,7 @@ public class ReleasePomMojo extends AbstractResolveMojo {
 
     releaseTemplate.generateReleasePom()
 
-    projectHelper.attachArtifact(project, "pom", "release-pom", new File(finalOutputFile))
+    projectHelper.attachArtifact(project, "xml", "release-pom", new File(finalOutputFile))
   }
 
   private Artifact dependencyToArtifact(final Dependency dep) {
